@@ -39,6 +39,8 @@ PrintStringDone:
 CR: 	; carriage return - move to first pos in next line down
 
 	push r11
+	push r1
+	push r2
 	mov @CursorPos,r1   ; get current screen pos
 	clr r0              ; set r1 to 0
 	li r2,32            ; set r2 to 32 ( may need to use screen width)
@@ -49,6 +51,8 @@ CR: 	; carriage return - move to first pos in next line down
 	mov r1,@CursorPos   ; store screen pos
 	mov r1,r2           ; gotoxy needs screen pos in r2
 	bl @gotoxy          ; move to screen pos ori 4000h to r fyi
+	pop r2
+	pop r1
 	pop r11
 	b *r11
 
@@ -60,8 +64,8 @@ Cls:
         clr r0
         li r1,2000h
         li r0,0000h             ;Write 0000 - Vram for text chars
-        bl @VDP_SetWriteAddress
-
+        ;bl @VDP_SetWriteAddress
+	bl @setVDPwaddr
         li r4,24
 	li r0,SPACE
 clslp   li r1,32
@@ -72,19 +76,13 @@ cls2	movb r0,@8C00h		;DataPort - put next char on screen
         jne clslp
         li r1,2000h
         li r0,0000h             ;Write 0000 - Vram for text chars
-        bl @VDP_SetWriteAddress
+        ;bl @VDP_SetWriteAddress
+	bl @setVDPwaddr
 	clr r0
 	mov r0,@CursorPos
 	pop r11
 	b *r11
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-VDP_SetWriteAddress:
-        ori r0,4000h            ;Bit 6=Write
-SetVramPos:
-        swpb r0
-        movb r0,@8C02h  ;  L        8C02h=Control Port
-        swpb r0
-        movb r0,@8C02h  ;  H
-        b *r11                          ;Return
+
 
 

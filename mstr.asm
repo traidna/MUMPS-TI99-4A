@@ -7,8 +7,7 @@ getmstr ;
 	;mov r11,*r10+
 	push r11
 
-;getleftval:   ; get left side of expression
-
+	;getleftval:   ; get left side of expression
 
 	bl @getvalue   ; left side
         
@@ -40,6 +39,9 @@ gmplus
 	jeq gmright
 	ci r3,RightBracket
 	jeq gmright
+	ci r3,Underscore
+	jeq gmright
+
 	
 	; error ...
 	jmp exitgm
@@ -48,7 +50,8 @@ gmright:   ; get right side of expression
 
 	pushss r2      ; push operator on ss stack 
 	movb r3,*r2+   ; 
-	movb 0h,*r2   
+	clr r3
+	movb r3,*r2 
 
 	inc r9
 	movb *r9,r3
@@ -57,18 +60,18 @@ gmrt2	push r3
 	bl @getvalue   ; get right hand value and put on ss stack
 	pop r3
 
-	ci r3,Equals
-	jeq gmstrmath
-	ci r3,RightBracket
-	jeq gmstrmath
+	;ci r3,Equals
+	;jeq gmstrmath
+	;ci r3,RightBracket
+	;jeq gmstrmath
 	
 domath	bl @math         ; numeric operators
 
 	jmp gmops
  
-gmstrmath:
-	bl @StringMath   ; string operators
-	jmp gmops	
+	;gmstrmath:
+	;bl @StringMath   ; string operators
+	;jmp gmops	
 
 
 
@@ -154,20 +157,37 @@ termstr
 varstr:	; get value of variable
 	; 
 	
-	dec r9         ; prep for get label
-	li r1,VARNAME
-	push r1
-	bl @getlabel
-	;;jmp $
-	li r7,VARNAME
-	mov @HEAD,r6
-	bl @TreeFindVar   ; r6 holds address if found, 0h otherwise
+	dec r9           ; prep for get label
+	li r1,VARNAME    ; point to scrath mem to store varname
+	push r1          ; address to store varname
+	bl @getlabel     ; go read varname from code
+	li r7,VARNAME    ; set r7 to address of varname for find
+	mov @HEAD,r6     ; set to head of tree to search 
+	bl @TreeFindVar  ; r6 holds address if found, 0h otherwise
+	ci r6,0          ; if 0 not found 
+	jeq varstrerr    ; log error
+	movb *r9,r3      ; is it a simple var or array
+	ci r3,Openparen  ;
+	jne varsimple
+varsarr:
+	push r6 
+	inc r9
+	bl @getmstr      ; get value of what is in parens
+	popss r7
+	pop r6
+	mov @8(r6),r6
+	bl @TreeFindVar	
 	ci r6,0
-	jeq varstrerr
-	mov @14(r6),r6
-	pushss r7
-	bl @strcopy	
-	jmp varstrexit
+	jeq varstrerr   
+	inc r9           ; past close paren	
+	
+	;jmp varstrexit
+varsimple:
+	mov @14(r6),r6   ; get poiter to data   
+	pushss r7        ; get address to store data on str stack
+	bl @strcopy	 ; copy to address in string stack
+	jmp varstrexit   ; all done
+
 varstrerr:
 	li r1,25
 	mov r1,@ErrNum
@@ -213,16 +233,16 @@ getlabel:  ; get label name from code ( maybe combine with getvarname)
 	movb NULL,*r1  ; initial to NULL incase no label here
 	
 getlab2:
-	clr r3          ;;;;;;;;
-	movb *r9,r3     ; get char and advance code pointer
-	ci r3,NULL      ; if null done
-	jeq getlabterm  ; terminate the string
-	ci r3,SPACE     ; if space done
-	jeq getlabterm  ; terminiate the string
-	ci r3,OpenParen     ; if space done
-	jeq getlabterm  ; terminiate the string
-	ci r3,CloseParen     ; if space done
-	jeq getlabterm  ; terminiate the string
+	clr r3            ; clear char
+	movb *r9,r3       ; get char and advance code pointer
+	ci r3,0h          ; if null done
+	jeq getlabterm    ; terminate the string
+	ci r3,SPACE       ; if space done
+	jeq getlabterm    ; terminiate the string
+	ci r3,OpenParen   ; if ( done
+	jeq getlabterm    ; terminiate the string
+	ci r3,CloseParen  ; if ) done
+	jeq getlabterm    ; terminiate the string
 
 	ci r3,Equals    ; if = done
 	jeq getlabterm  ; terminiate the string
@@ -234,7 +254,9 @@ getlab2:
 
 
 	ci r3,RightBracket    ; if ] done follows operator
-	jeq getlabterm  ; terminiate the string
+	jeq getlabterm        ; terminate the string
+	ci r3,Underscore      ; concat
+	jeq getlabterm        ; terminate the string
 
 	ci r3,Comma     ; if , then done
 	jeq getlabterm  ; terminate the string
@@ -249,6 +271,8 @@ getlab2:
 	ci r3,Slash     
 	jeq getlabterm  ; terminate the string
 	ci r3,Hashtag     
+	jeq getlabterm  ; terminate the string
+	ci r3,Colon
 	jeq getlabterm  ; terminate the string
 
 	bl @isalpha     ; must be an alpha or num

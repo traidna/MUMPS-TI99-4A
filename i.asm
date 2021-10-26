@@ -12,7 +12,15 @@ If:
         jmp ifend       ; exit out bottom
 
 if2:
-        ;movb *r9,r3     ; read char after space
+        movb *r9,r3     ; read char after space
+	ci r3,Space     ; the i sp sp only check $T
+	jne if3
+	mov @DolT,r3     ; get DolT
+	ci r3,MFALSE	; 
+	jeq ifeol       ; if false do not execute line
+	jmp ifend       ; if true continue on
+
+if3:
         bl @getmstr      ; get mumps string
         mov @ErrNum,r1   ; check for any errors
         ci r1,0          ; see if any errors
@@ -24,8 +32,9 @@ if2:
 	li r7,MFALSE
 	li r6,Dolt
 	mov r7,*r6       ; set $T to FALSE
+	li r0,0h
 ifeol:  movb *r9,r3      ; skip to eol, get next char
-	cb r3,0          ; is it NULL (end of line)
+	cb r3,r0          ; is it NULL (end of line)
 	jeq ifend
 	inc r9
 	jmp ifeol        ; if not get next one       

@@ -17,17 +17,20 @@ addvar:  ;  pass varname pointer, data pointer on stack
 	pop r5
 	ci r6,0h           ; if not add new
 	jeq addvarnew      ; add new
-	mov @14(r6),r7          ; mov address of data node to r7 
+	push r6            ;;;; new for array
+        ; update value in var                         
+	mov @14(r6),r7     ; mov address of data node to r7 
 	mov r5,r6          ; move string data to r6
 	bl @strcopy        ; copy new string data to data node
 	jmp advarend
 
 addvarnew:
 	bl @newnode
+	push r6    ;;;; new for array
 	bl @insertnode
 	; push return value?? 
-	
 advarend:
+	pop r6       ;; new for array
 	pop r11
 	b *r11        ; return 
 
@@ -40,6 +43,15 @@ newnode:   ; pass address of string of var name in r4
 	push r11
 
 	mov @VIptr,r7 ;  get address of next open address for index node 
+
+	clr r1
+	li r2,16
+	push r7       ; save address of node
+nnclr:  movb r1,*r7+  ; clr out node
+	dec r2        ; decrease counter
+	jne nnclr     ; counter =0 ?
+	pop r7        ; reset address
+
 	mov r7,r2     ;  copy as strcopy uses r7
 	mov r4,r6     ;  get varname address in f6 for strcopy
 	bl @strcopy   ;  copy varname to index record
@@ -50,7 +62,7 @@ newnode:   ; pass address of string of var name in r4
 	clr r0        ; set r0 to 0000h
 	mov r0,*r2+   ; nulls in link to subscript
 	mov r0,*r2+   ; nulls in left link
-	mov r0,*r2+   ; nulss in right link
+	mov r0,*r2+   ; nulls in right link
 	mov r8,*r2    ; save address of where data will be stored
 
 	mov r8,r7     ; target destination in data area
@@ -73,18 +85,44 @@ insertnode:  ; insert a new node or update existing nodes data
              ; pass in r6 the address of new or updated node
 	push r11
 
-	mov @Head,r8
-	ci r8,0
-	jeq firstnode
-	mov @Head,r7
-	bl @treeinsert
-	jmp insexit
+	mov @Head,r8     ; put head of tree to insert in r8
+	ci r8,0          ; if it empty
+	jeq firstnode    ; if yes then this is first node
+	mov @Head,r7     ; if not then find place to insert
+	bl @treeinsert   ; go insert 
+	jmp insexit      ; done
 
 firstnode:
-	mov r6,@Head
+	mov r6,@Head     ; store to head 
+	
 insexit:
 	pop r11
 	b *r11
+
+
+
+insertsubnode:  ; insert a new node or update existing nodes data
+             ; pass in r6 the address of new or updated node
+	     ; pass in address of simple var node in r1
+
+	push r11
+
+	mov @8(r1),r8     ; head of tree is vars sub field 
+	ci r8,0           ; if it empty
+	jeq firstsubnode  ; if yes then this is first node
+	;mov @Head,r7     ; if not then find place to insert
+	mov @8(r1),r7     ; set head of tree to insert into
+	bl @treeinsert    ; go insert 
+	jmp insubexit     ; done
+
+firstsubnode:
+	;mov r6,@Head        ; store to head 
+	mov r6,@8(r1)        ; store index ptr in simple var (parent) 
+insubexit:
+	pop r11
+	b *r11
+
+
 
 
 treeinsert:    ; address of new index node is in r6, current node r7
@@ -182,3 +220,18 @@ treefvexit:
         b *r11             ; and return
 
 
+
+treemin:  ; find minimum value from a node
+	  ; pass in node in r6
+	push r11
+
+treemin1:	
+	mov @10(r6),r7
+	ci r7,0
+	jeq treeminend
+	mov r7,r6
+	jmp treemin1
+
+treeminend:
+	pop r11
+	b *r11

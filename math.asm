@@ -5,13 +5,32 @@ Math:   ; send operator in r3
 	;push r3
 
 	popss r6      ; pop right side string ptr
+
+	popss r2
+	clr r3
+	mov *r2,r3    ; get operator
+	
+
+	ci r3,Equals
+	jeq MathStrings
+	ci r3,RightBracket
+	jeq MathStrings
+	ci r3,Underscore
+	jeq MathStrings
+	
+	push r3
 	bl @strtonum  ; convert to value
 	mov r7,r5     ; right value
 
-	popss r6
-	mov *r6,r3    ; get operator
+	jmp numbermath
 
-	push r3
+
+MathStrings
+	bl @stringmath
+	jmp exitmath
+
+numbermath:
+
 	popss r6      ; pop left side string
 	bl @strtonum  ; convert to value returns value in r7
 
@@ -59,7 +78,7 @@ mathlessthan:
 
 modolo:    
         ci r3,Hashtag  ; is it a '#'
-	jne matherr
+	jne matherr    ; 
 	clr r6
 	div r5,r6    ; divide r4-r5 by r7
 	mov r7,r5
@@ -83,6 +102,7 @@ exitmath:
 	b *r11
 
 matherr: 
+	;jmp $
 	li r1,17       ; unknow math operator
 	mov r1,@Errnum ;
 	jmp exitmath
@@ -143,13 +163,74 @@ stnloop:
 	mov r8,r7
 	jmp stnloop       ; loop up to check next digit
 
-
-
 strtonumexit:
 	ci r1,0h
 	jeq stnexit
 	neg r7
 
 stnexit	pop r11
+	b *r11
+
+
+hstrtonum:   ; converts a hex number in a string to a value in a register
+	    ; pass string address in r6
+	    ; value returned in r7
+	    ; if string is not a number then return 0
+	    ; will interpret digits until not a digit "12ab" returns 12ahex
+	    ; integer values only for now
+
+	push r11
+	clr r8
+	clr r3            ; intialize return value
+	clr r1
+	movb *r6+,r3       ; get first char
+	ci r3,Minus
+	jne hstn1
+	mov r3,r1
+	movb *r6+,r3
+	
+hstn1:	bl @ishexdigit     ; check if hex digit  0-9 A-F
+	jne hstrtonumexit  ; no more digits
+	bl @isdigit        ; check if 0-9
+	jne hexval         ; since not digit it's an alpha
+	swpb r3
+	ai r3,-30h        ; subtract acsii value of '0' to get value
+	mov r3,r7         ; value of first digit
+	jmp hstnloop
+hexval	swpb r3
+	ai r3,-55          ; 
+	mov r3,r7
+
+hstnloop:
+	li r2,16
+	clr r3
+	movb *r6+,r3      ; get next char
+	bl @ishexdigit       ; check for digit
+	jne hstrtonumexit  ; no more digits
+	;swpb r3           ; move to lsb
+	bl @isdigit       ; 
+	jne hexval2
+	swpb r3
+	ai r3,-30h        ; calc val r3-'0'
+	;mov r3,r7
+	jmp hstrcalc
+
+hexval2:
+	swpb r3
+	ai r3,-55         ; calc val rs-55 A=10 B=11 etc
+
+hstrcalc:
+	mpy r2,r7         ; answer in r7,r8 smaller amount in r8
+	a r3,r8           ; add current digit to prev value *10
+	mov r8,r7
+	jmp hstnloop       ; loop up to check next digit
+
+hstrtonumexit:
+	ci r1,0h
+	jeq hstnexit
+	neg r7
+
+hstnexit	
+	pop r11
 	b *r11
 

@@ -234,8 +234,58 @@ dollexit:
 
 
 
+Doltt:  ; $t value
+	push r11
+	pushss r6
+	mov @DolT,*r6
+	pop r11
+	b *r11
+
+dolu:
+	push r11
+	clr r3
+	movb @fioerr,r3
+	swpb r3 
+	pushss r6
+	bl @toascstr	
+	pop r11
+	b *r11
+
+	
+doli:   ; dolio $IO
+	push r11
+        clr r3
+	movb *r9+,r3
+	ci r3,04F00h   ; 'O' of $io
+
+	jne dolierr
+        pushss r6
+	mov @Dolio,*r6
+
+doliexit:
+	pop r11
+	b *r11
+
+dolierr:
+       li r1,18		; bad function call
+	mov r1,@ErrNum  
+	jmp doliexit
 
 
+dolo:  ; $o
+	b *r11
+;	push r11
+;	li r1,debug1
+;	bl @PrintString
 
+	; $o(x(""))
+;	mov *r9+,r3
+;	ci r3,Openpaen
+;	jne 
 
+;	mov @head,r6
+;	bl @treemin
+;	jmp $	
+;	pop r11
+;	b *r11
 

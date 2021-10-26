@@ -39,8 +39,8 @@ Goend:
         ;pushm r9
         mov r2,r9
 GoendG:
-        b @lp
-
+        ;b @lp
+	b @pexit
 Goexit:	
 	pop r11
 	b *r11

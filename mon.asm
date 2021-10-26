@@ -32,5 +32,9 @@ ShowHex4b:  ; pass in r2
 	bl @ShowHexDigit
 	bl @ShowHexDigit
 	bl @ShowHexDigit
+	li r0,20h
+	bl @PrintChar
 	pop r11
 	b *r11
+
+

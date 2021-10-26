@@ -1,8 +1,8 @@
 	; string routines in TMS9900 ASM
 
 	; strlen
-	; counts bytes in a string passed in r6
-	; returned in r7
+	; counts bytes in a string passed on the stack
+	; returned in on the stack
 strlen:
 	;mov r11,*r10+
 	pop r6
@@ -24,12 +24,12 @@ sldone:
 	
 
 strcopy: ; copy string pointed to by r6 to address in r7
-	 ; when calling push source first then dest pop off in revers
          ; assumes NULL termiated string
 	 ; call with bl @strcpy	
 	;pop r7
 	;pop r6
 	push r11
+	push r3
 cpyloop:
  	clr r3         ; clear r3 holding char
         movb *r6+,r3   ; get next char
@@ -39,8 +39,35 @@ cpyloop:
         jmp cpyloop    ; loop back up for next one
 cpydone: 
 	movb r3,*r7   ; terminate the string
+	pop r3
 	pop r11
 	b *r11        ; return tocaller
+
+
+strcat:   ; adds the string pointed to in R7 to the end for string in r6
+          ; it's up to the caller to make sure there is space in r7
+        
+          ; find end of r7
+	push r11
+	push r6
+	push r7
+	clr r11
+strcat2:
+	movb *r6+,r11   ; get current char 
+	ci r11,0h       ; is it the end of string
+	jne strcat2     ; if not keep going
+        dec r6          ; back to end of string
+strcat3:
+	movb *r7+,r11   ; get next char of
+        movb r11,*r6+   ; add on end of r6
+	ci r11,0        ; is it end of string in r7?
+        jne strcat3     ; if not get next char
+
+	pop r7
+	pop r6
+	pop r11
+	b *r11
+
 
 
 strcmp:   ; compares two strings passed in with r6 and r7 return val in r5

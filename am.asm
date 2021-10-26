@@ -20,9 +20,14 @@ VDptr      equ 0832Eh   ; pointer to next available local var data node
 STRSP      equ 08330h   ; pointer to top of string stack 
 QuitFlag   equ 08332h   ; True when Quit and return stack empty
 Head       equ 08334h   ; head of the symbol table b-tree
+DolT       equ 08336h   ; MUMPS system variable $T used for if, else, read
+Dolio      equ 08338h   ; word house $io in lsb, msb =00, console is 0000h
+tmpio      equ 0833Ah   ; temp io for open, use, close 
+openio     equ 0833Ch   ; open file dev number
+fioerr     equ 0833Eh   ; value from paberr in vdp ram set in fileio
+SWBANK     equ 08340h   ; 8 bytes for bank switching code 8340 - 8347
 keyin      equ 08375h   ; ROM - kscan address for ascii code
-DolT       equ 08376h    ; MUMPS system variable $T used for if, else, read
-Parenct    equ 08378h   ; word to count paren depth
+
 ALTSPACE   equ 083C0h   ; Available alternate workspace
 wspMonitor equ 083E0h	; Address for our monitor Vars
 
@@ -57,8 +62,12 @@ pabcc       equ 03A65h         ; output char count
 pabrec      equ 03A66h         ; record number
 pabsco      equ 03A68h         ; usual 0, screen offset
 pabnln      equ 03A69h         ; length of file name DSK1.FILE1 = 10 0AH 
-pabfil      equ 03A3Ah         ; text of filename ( leave 32 bytes ?)
+pabfil      equ 03A6Ah         ; text of filename ( leave 32 bytes ?)
 
+
+BUFADR      equ 01000h         ; address in VDP mem for read/write buffer
+PABADR	    equ 00F80h         ; address of where pab will go
+PABERR      equ 00f81h         ; address of where errors are noted in pab 
 
 SCRATCH    equ 03B00h   ; FREE MEMORY 3B00-3BFF FOR NOW
 STACK      equ 03C00h   ; Stack t0 3FFF - total of 1024 bytes 512 words
@@ -84,6 +93,7 @@ Minus        equ 02D00h   ; word value of -
 Zero         equ 03000h   ; word value of '0'
 Period       equ 02E00h   ; word value of .
 Slash        equ 02F00h   ; word value of /
+Colon        equ 03A00h   ; word value of :
 Semicol      equ 03B00h   ; word value of ;
 LessThan     equ 03C00h   ; word value of <
 Equals       equ 03D00h   ; word value of =
@@ -94,16 +104,20 @@ Underscore   equ 05F00h   ; word value of _
 Cursor       equ 01E00h   ; word value of - defined below
 MTRUE        equ 03100h   ; word value of true '1' 
 MFALSE       equ 03000h   ; word value of false '0'
-
+ConsIO       equ 03000h   ; word value of '0' for console io 
+PKey         equ 05000h   ; Word value fo 'P'
+QKey         equ 05100h   ; word value of 'Q'    
+ReadMode     equ 05200h   ; word value of 'R' - file read mode in open
+WriteMode    equ 05700h   ; word value of 'W' - file write mode in open 
 
 Quoteword  equ 02200h   ; word value of "
 NULL       equ 00000h   ; NULL end of string marker
 EOF        equ 0FF00h   ; 255 byte or FFFFh work end of file marker
 
 	 ; Cartridge Header Info 	 
-	include am.h  
+	include am.h 
 	include utils.asm   ; define cursor, copy font from TI Basic Grom
-
+	
 ProgramStart:
 	
 	limi 0        	; disable interrupts
@@ -121,7 +135,7 @@ ProgramStart:
 	li r13,MSTACK     ; mumps return stack
 	li r2,STRSTACK    ; mumps string/math stack
 	mov r2,@MSP       ; mumps string stack 	
-
+	
 	; initialize MUMPS source code area
 
 	bl @defcursor     ; create cursor definition
@@ -139,6 +153,11 @@ init:	clr r2
 	mov r2,@HaltFlag       ; set haltflag to 0 - keep parsing 
 	mov r2,@ErrNum         ; set ErrNum to 0   - no errors
 	mov r2,@Head           ; set Head of btree to empty
+	clr @fioerr
+	li r2,MFALSE
+	mov r2,@DolT           ; init $T to '0'
+	li r2,MFALSE
+	mov r2,@Dolio          ; $IO default to 3000h for console '0'
 	li r2,CODESTART
 	mov r2,@CodeTop        ; Iintial CodeTop ( next addres for M code)
 	li r1,EOF              ; Initial code space
@@ -256,13 +275,16 @@ errors:   ;
 	bl @CR
 	li r1,ERRMSG
 	bl @PrintString
-	; reset error flag and any stacks
 	mov @ErrNum,r2	
 	bl @ShowHex4
 	bl @CR
+	mov r9,r2
+	bl @ShowHex4
+	bl @CR
 
-	li r13,MSTACK    ; init mumps stack (string stack later?)
-	li r2,STRSTACK    ; mumps string/math stack
+	; reset error flag and any stacks
+	li r13,MSTACK     ; init mumps stack (string stack later?)
+	li r2,STRSTACK    ; init mumps string/math stack
 	mov r2,@MSP       ; mumps string stack 	
 
 	clr r1
@@ -290,15 +312,20 @@ pexit:
 	b *r11
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-        include d.asm
+        include banklib.asm
+	include b.asm
+	include c.asm
+	include d.asm
        	include e.asm
 	include g.asm
 	include h.asm
         include i.asm
+	include o.asm
 	include q.asm
 	include r.asm
 	include s.asm
-        include w.asm
+        include u.asm
+	include w.asm
 	include z.asm
 	include mstr.asm
 	include math.asm
@@ -309,6 +336,10 @@ pexit:
 	include prtlib.asm
 	include strlib.asm
 	include charlib.asm
+	include iolib.asm
+	include vdpfio.asm 
+	include dsrlnk.asm
+	include ramutils.asm
 	include tree.asm
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -330,10 +361,17 @@ ERRMSG  byte "ERROR : "
 HMSG:   byte "HALTING MUMPS"
         byte NULL
         align 2
+PQmsg:  byte "[P]REV   [ENTER] NEXT   [Q]UIT"   
+	byte 0
+	align 2
 debug1:  byte "DEBUG01"
  	 byte NULL
-debug2:  byte "DEBUG02"
- 	 byte NULL
+zsmsg:   byte "SAVING TO : "
+ 	 byte 0
+	 align 2
+zlmsg:   byte "LOADING FROM : "
+	 byte 0
+	align 2
 ZIMsg:   byte "ENTER LINE OF CODE TO INSERT:"
 	 byte 0
 	 align 2
@@ -341,11 +379,24 @@ PressMsg: byte "PRESS ENTER TO CONTINUE"
 	 byte 0
 	align 2
 
+zsfn:	byte "DSK1.MSRC"
+	byte 0
+	align 2
+
+EOFmark byte 0FFh,00
+
+NULLstr byte 0h
+	align 2	
+
 jmptbl:  ; MUMPS command jump table
-        word 0,0,0,Do,Else,0,Go,Halt
-	word If,0,0,0,0,0,0,0
-        word Quit,Read,Set,0,0,0,Write,0,0,Zee
+        word 0,Bank,Close,Do,Else,0,Go,Halt
+	word If,0,0,0,0,0,Open,0
+        word Quit,Read,Set,0,Use,0,Write,0,0,Zee
 
 doltbl:
-	word dola,0,dolc,0,dole,0,0,0,0,0,0,doll,0
-        word 0,0,dolp
+	word dola,0,dolc,0,dole,0,0,0,doli,0,0,doll,0
+        word 0,dolo,dolp,0,0,0,doltt,dolu
+
+
+	org 07fffh
+	byte 0

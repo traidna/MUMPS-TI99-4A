@@ -30,7 +30,8 @@ else3:
 
 elseeol:   ; if $T is true then do not do else and advance to eol
 	movb *r9,r3      ; skip to eol, get next char
-	cb r3,0          ; is it NULL (end of line)
+	li r0,0
+	cb r3,r0          ; is it NULL (end of line)
 	jeq elseend
 	inc r9
 	jmp elseeol        ; if not get next one       

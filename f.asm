@@ -1,30 +1,24 @@
-	; read command
-	; r x  read string finish with ENTER
-	; r *x single key read - wait for key press
+	; for loop 
+	; f var=x:y:z - start var at x, increment by y until z
+	; f var=x:y   - start var at x, incrment by y (need a quit)
+	; f  cmd      - indefinite loop no var, need a quit
 
-Read:
+For:
 	push r11
 
 	clr r3           ; zero out r3
-	mov @Dolio,r5    ; get current io device
-        movb *r9+,r3     ; read char after S and advance past
+        movb *r9+,r3     ; read char after F  and advance past
         ci r3,2000h      ; is it space should be
-        jeq Read2        ; if good jump down
+        jeq For2         ; if good jump down
         li r1,12         ; missing space syntax error
         mov r1,@ErrNum   ; set error num
         jmp readend      ; exit out bottom
-	
 
-Read2:
+For2:
 	movb *r9,r3      ; read char after space
         ci r3,Asteric    ; is is an *
 	jne Readstr      ; if not read a string below
-	ci r5,ConsIO      ; check if consolio
-	jeq Read2b       ; if it is ok
-	li r1,31         ; not consolion so no * allowed
-	mov r1,@ErrNum   ; log error
-	jmp readend      ; exit out
-Read2b:	inc r9           ; move past *
+	inc r9           ; move past *
 	bl @getkey	 ; read one keypress	
 	pushss r6	 ; get address on string stack
 	mov r7,r3        ; toascstr need char in r3
@@ -32,32 +26,14 @@ Read2b:	inc r9           ; move past *
 	bl @toascstr     ; call util to conver byte value to num string 
 	jmp Read2a       ; jump down to get var name
 
-
-
-
 Readstr:  ; not an * so get string
 	; add code here
-	ci r5,ConsIO
-	jne RdFile
 	mov @CursorPos,r6		
 	push r6
 	bl @getstr
 	li r6,TIB
 	pushss r7
-	bl @strcopy
-	jmp Read2a
-
-Rdfile:  ; read rec from open file and copy to string stack from vdpmem
-	li r1,2          ;read opcode
-	swpb r1          ; swap to msb
-	movb r1,@pabopc	 ; put in PAB record
-	bl @clrVDPbuf    ; clear read buffer
-	bl @fileio       ; request the read
-	li r0,BUFADR     ; vdp address of read buffer
-	pushss r2        ; address in ram to copy to 
-	bl @VDPtoRAM     ; copy from Vdp memory to ram (bufaddr to var)
-	jmp Read3
-
+	bl @strcopy	
 	
 Read2a:	
 	movb *r9,r3

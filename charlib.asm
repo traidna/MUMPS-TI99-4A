@@ -49,6 +49,28 @@ isdigitend:
         b *r11
 
 
+ishexdigit:    ;  determine if a character is a hex digit 0-9 A-F
+	       ;  pass in r3
+
+	push r11
+	
+	bl @isdigit    ; check if digit
+	jeq ishexgood   ; if yes then done
+	bl @isalpha    ; check if alpha char
+	jne ishexend   ; if not then done
+	ci r3,04600h   ; compare to F
+	jgt ishexend   ; if greater than F quit
+	               
+ishexgood:
+	pop r11  
+	c r3,r3        ; good so force EQ before exiting
+	jmp ishexend2
+ishexend: 
+	pop r11
+ishexend2:
+	b *r11
+
+
 toascstr: 
 	 ; convert a char (value in a byte) to a string with the ascii code/value
 	 ; pass char in lsb of r3
@@ -105,10 +127,6 @@ toaschuns2:
 	swpb r2        ; put in msb
 	movb r2,*r6+   ; put in string
 	li r15,1       ; something in sting
-
-
-
-
 
 toascstens:
 	               ;  remainder in r3

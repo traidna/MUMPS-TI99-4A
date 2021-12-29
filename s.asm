@@ -2,20 +2,20 @@
 Set: 	; 
 	push r11
 
-        clr r3           ; zero out r3
-        movb *r9+,r3     ; read char after S and advance past
-        ci r3,2000h      ; is it space should be
-        jeq Set2         ; if good jump down
-        li r1,12         ; missing space syntax error
-        mov r1,@ErrNum   ; set error num
-        jmp setend       ; exit out bottom
+    clr r3           ; zero out r3
+    movb *r9+,r3     ; read char after S or F and advance past
+    ci r3,2000h      ; is it space should be
+    jeq Set2         ; if good jump down
+    li r1,1         ; missing space syntax error
+    mov r1,@ErrNum   ; set error num
+    jmp setend       ; exit out bottom
 
 Set2:
-        movb *r9,r3      ; read char after space
-        bl @isalpha      ; must be an alpha to start
-        jeq Set3         ; if an aplph keep goin 
-        li r1,4          ; bad label
-        mov r1,@ErrNum   ; set error num
+    movb *r9,r3      ; read char after space
+    bl @isalpha      ; must be an alpha to start
+    jeq Set3         ; if an aplph keep goin 
+    li r1,4          ; bad label
+    mov r1,@ErrNum   ; set error num
 	jmp setend
 
 Set3:      
@@ -30,22 +30,22 @@ Set3:
 	ci r3,OpenParen  ; then array 
 	jeq SetArray     ; goto setarray
 	popss r1         ; take the varname off string stack
-        li r1,7          ; error expecting =
-        mov r1,@ErrNum   ; set error num
+    li r1,24         ; error expecting =
+    mov r1,@ErrNum   ; set error num
 	jmp setend
 	
 Set4:
 	
 	bl @getmstr      ; get mumps string - value of variable
-        mov @ErrNum,r1   ; get error var
-        ci r1,0          ; see if any errors
-        jne serror       ; yes found error - do not print anything
+    mov @ErrNum,r1   ; get error var
+    ci r1,0          ; see if any errors
+    jne serror       ; yes found error - do not print anything
 
 SetSave:
-	popss r2          ; address of data
-	;; since more access to string stack from here it'll 
-        ;; be ok to acess from here
-        ;; until any more pushss occure
+	popss r2          ; address of data string
+	;; since no more access to string stack from here it'll 
+    ;; be ok to acess from here
+    ;; until any more pushss occure
 	popss r1         ; pop varname from string stack
 	push r1          ; push address of varname to stack for addvar	
 	push r2          ; push data to be assigned to varname
@@ -54,7 +54,15 @@ SetSave:
 serror: 
 	popss r1        ; take varname off string stack
 
-setend:	pop r11
+setend:	
+	clr r3
+	movb *r9,r3
+	ci r3,Comma
+	jne setexit
+	inc r9
+	jmp set2
+setexit:
+	pop r11
 	b *r11
 
 
@@ -86,29 +94,48 @@ SetArray:  ;
 	bl @addvar       ; call routine to store varible in btrees 
 
 setarr2:   ; r6 needs to hold parent simple var ( from find or add) 
+	push r7
+	push r6
+	mov r3,r7        ; subscript to find
+	mov @8(r6),r6    ; head of sub tree to search 
+	bl @TreeFindVar  ; search for sub node
+	ci r6,0          ; if find returns 0 does not exist
+	jeq setarr2a     ; sub node not found
+	pop r5           ; r6 from above not needed
+	pop r5           ; r7 from above not needed
+	pop r5           ; addrss of value
+	mov @14(r6),r7   ; found subnode data address to r7
+	mov r5,r6        ; move address of pointer to value
+	bl @Strcopy      ; copy data to data node
+	jmp setend
+ 
+setarr2a:  ; sub node does not exist
+	pop r6
+	pop r7
 	mov r3,r4        ; subscript is var name
 	pop r5           ; value to be stored
 	push r6          ; address to parent
 	
+
+
 setarrnew:
 
 	bl @newnode      ; data already in r5 address of new node in r6
 	pop r1           ; parent address
 	bl @insertsubnode
 
-
 	; then add subindex
 	jmp setend
 
 setarrerr1: ; missing )
-	li r1,17        ; error missing )
+	li r1,15        ; error missing )
 	mov r1,@ErrNum
 	jmp setarrpops
 
 
 
 setarrerr2:  ; missing =
-	li r1,18
+	li r1,24
 	mov r1,@ErrNum
 	jmp setarrpops
 

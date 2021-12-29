@@ -1,5 +1,6 @@
 
-Math:   ; send operator in r3
+Math:   
+    ; send operator in r3
 	; left and rigth values on string stack 
 	push r11
 	;push r3
@@ -10,7 +11,7 @@ Math:   ; send operator in r3
 	clr r3
 	mov *r2,r3    ; get operator
 	
-
+	; check for operators that are string operators
 	ci r3,Equals
 	jeq MathStrings
 	ci r3,RightBracket
@@ -19,7 +20,7 @@ Math:   ; send operator in r3
 	jeq MathStrings
 	
 	push r3
-	bl @strtonum  ; convert to value
+	bl @strtonum  ; convert to value   Right Value
 	mov r7,r5     ; right value
 
 	jmp numbermath
@@ -36,10 +37,30 @@ numbermath:
 
 	pop r3              ; get operator
 
-add:	ci r3,Plus    ; is it a plus sign 
+andOp:	
+	ci r3,Amp     ; is it an & (and)
+	jne orOp      ; if not then try next op
+	mov r5,r5     ; check if r5=0 
+	jeq isfalse   ; if 0 then and is false
+	mov r7,r7     ; check if r7 is 0
+	jeq isfalse   ; if o then and is false
+	jmp istrue    ; otherwise and is true
+	
+orOp:	
+	ci r3,Exclampt ; is it an ! (or)
+	jne add        ; if not then try next op
+	mov r5,r5      ; check if r5=0
+	jne istrue     ; if not then or is true
+	mov r7,r7      ; check if r7=0
+	jne istrue     ; if not then or is true
+	jmp isfalse    ; otherwise or is false
+	
+add:	
+	ci r3,Plus    ; is it a plus sign 
 	jne sub       ; if not jump to next operator
 	a r7,r5       ; add left to right store in right
 	jmp math2     
+
 sub:
 	ci r3,Minus  ; is it subtraction
 	jne mult     ; jump to next operator
@@ -80,8 +101,8 @@ modolo:
         ci r3,Hashtag  ; is it a '#'
 	jne matherr    ; 
 	clr r6
-	div r5,r6    ; divide r4-r5 by r7
-	mov r7,r5
+	div r5,r6    ; divide r6,r7 by r5
+	mov r7,r5    ; remainder in r7
 	jmp math2
 
 istrue:
@@ -92,9 +113,11 @@ isfalse:
 	clr r3
 	jmp math3
 
-math2:	mov r5,r3     ; move to r3 for toascstr
+math2:	
+	mov r5,r3     ; move to r3 for toascstr
 
-math3:	pushss r6     ; get new string stack ptr for result
+math3:	
+	pushss r6     ; get new string stack ptr for result
 	bl @toascstr  ; convert value to a string
 
 exitmath:
@@ -110,22 +133,22 @@ matherr:
 unaryop:
 	;push r11
 	push r3          ; operator
-        pushss r6        ; create left side of op expression
+    pushss r6        ; create left side of op expression
  
-	li r3,Zero       ; load with 0
-        movb r3,*r6+     ; '0'
-        clr r3           ; 
-        movb r3,*r6      ; terminate with null
+	li r3,Zero       ; load with 0 character
+    movb r3,*r6+     ; '0'
+    clr r3           ; clear r3
+    movb r3,*r6      ; terminate with null
 
 	pushss r6
 	pop r3
 	mov r3,*r6+
 	push r3
 
-	bl @getvalue      ; right side
+	bl @getvalue     ; right side
 	pop r3           ; get operator back
 	bl @math         ; do operator
-        b @exitgetmstr    ; jump back to mstr - exit getvalue 
+    b @exitgetmstr   ; jump back to mstr - exit getvalue 
 
 
 strtonum:   ; converts a number in a string to a value in a register
@@ -172,11 +195,16 @@ stnexit	pop r11
 	b *r11
 
 
-hstrtonum:   ; converts a hex number in a string to a value in a register
+	
+	
+	
+	
+hstrtonum:
+        ; converts a hex number in a string to a value in a register
 	    ; pass string address in r6
 	    ; value returned in r7
 	    ; if string is not a number then return 0
-	    ; will interpret digits until not a digit "12ab" returns 12ahex
+	    ; will interpret digits until not a digit "12ab" returns 12ab hex
 	    ; integer values only for now
 
 	push r11
@@ -205,14 +233,12 @@ hstnloop:
 	li r2,16
 	clr r3
 	movb *r6+,r3      ; get next char
-	bl @ishexdigit       ; check for digit
-	jne hstrtonumexit  ; no more digits
-	;swpb r3           ; move to lsb
+	bl @ishexdigit    ; check for digit
+	jne hstrtonumexit ; no more digits
 	bl @isdigit       ; 
 	jne hexval2
 	swpb r3
 	ai r3,-30h        ; calc val r3-'0'
-	;mov r3,r7
 	jmp hstrcalc
 
 hexval2:

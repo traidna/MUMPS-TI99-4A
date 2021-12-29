@@ -1,22 +1,21 @@
 	; d.asm - Do routine
 Do: 	; 
-	;push r11
 
-        clr r3           ; zero out r3
-        movb *r9+,r3     ; read char after D and advance past
-        ci r3,2000h      ; is it space should be
-        jeq DO2          ; if good jump down
-        li r1,12         ; missing space syntax error
-        mov r1,@ErrNum   ; set error num
-        jmp doend        ; exit out bottom
+    clr r3           ; zero out r3
+    movb *r9+,r3     ; read char after D and advance past
+    ci r3,2000h      ; is it space should be
+    jeq DO2          ; if good jump down
+    li r1,1         ; missing space syntax error
+    mov r1,@ErrNum   ; set error num
+    jmp doend        ; exit out bottom
 
 Do2:
-        movb *r9,r3      ; read char after space
+    movb *r9,r3      ; read char after space
 	bl @isalpha      ; must be an alpha to start
 	jeq Do3
-        li r1,4          ; bad label
-        mov r1,@ErrNum   ; set error num
-        jmp doend        ; exit out bottom
+    li r1,4          ; bad label
+    mov r1,@ErrNum   ; set error num
+    jmp doend        ; exit out bottom
 	
 Do3:
 	li r1,LABEL      ; load up mem space to store label text
@@ -27,18 +26,27 @@ Do3:
 	bl @findlabel
 	pop r2           ; 0 if not found otherwise addr after label
 	pop r8           ; if r2 not 0 r8 will have addr of start
+	ci r2,0          ; check if not found
+	jne Doend        ; found jump down
+	li r1,11         ; not found error 11
+	mov r1,@ErrNum   ; save error
+	jmp DoErr        ; jump out to error handler
 
-Doend:  
-	pushm r9
-	mov r2,r9
-	b @lp
-	;bl @lp
-	;li r1,debug1
-	;bl @Printstring
-	;bl @getkey
-Doexit:	;pop r11
-	;b *11
+Doend:
+    mov @Forflg,r11  ; check if in for loop
+	ci r11,0
+	jeq Doend2       ; if yes no do not increment do counter
+	mov @Doflg,r11   ; increment level of dos 
+	ai r11,1         
+	mov r11,@Doflg
+Doend2:
+	pushm r9        ; push return address for after do, quit will pop this
+	mov r2,r9       ; set address to continue execution
+	;;;pop r11
+	b @lp           ; send to line parser
 
+DoErr:
+	b @errors	
 
 
 findlabel:   ; search label pointed to by address on top of stack
@@ -62,13 +70,14 @@ findlab2:
 	jne flnextline  ; if no, then advance to next line
 	li r7,SCRATCH   ; point r7 at available scratch memory
 
-fl22	movb *r2+,*r7+  ; copy label to scratch
+fl22:	
+	movb *r2+,*r7+  ; copy label to scratch
 	movb *r2,r3
 	ci r3,SPACE     ; stop at space
 	jne fl22        ; if not space keep going
 	clr r11
-	movb r11,*r7      ; it's a space so terminate the string
-			; compare this label to one passed in
+	movb r11,*r7    ; it's a space so terminate the string
+			        ; compare this label to one passed in
 	li r7,SCRATCH
 	mov r8,r6       ; reset r6 back to start of passed in string
 	;jmp $

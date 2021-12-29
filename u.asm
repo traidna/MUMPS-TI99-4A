@@ -11,7 +11,7 @@ Use:
 	bl @getdevnum     ; returns devnumber in r3 or ErrNum is set
 	mov @ErrNum,r1    ; check errnum
 	ci r1,0           ; is it 0
-	jne usend	  ; not 0 have error
+	jne usend	      ; not 0 have error
 	ci r3,ConsIO      ; is it the console
 	jeq setdolio
 	mov @openio,r2     ; see what device is open
@@ -22,7 +22,7 @@ setdolio:
 	jmp usend         ; all done
 	
 userr:
-	li r1,30          ; log error
+	li r1,9         ; log error
 	mov r1,@ErrNum   
 usend:
 	pop r11           ; return to caller

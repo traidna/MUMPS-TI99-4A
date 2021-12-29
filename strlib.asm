@@ -9,10 +9,11 @@ strlen:
 	push r11
 
 	clr r7         ; lenght counter
-slloop:	clr r3         ; clear r3 holding char
-        movb *r6+,r3   ; get next char
-        ci r3,0        ; is char 0 
-        jeq sldone     ; if yes done	 
+slloop:	
+	clr r3         ; clear r3 holding char
+    movb *r6+,r3   ; get next char
+    ci r3,0        ; is char 0 
+    jeq sldone     ; if yes done	 
 	inc r7         ; add one to length counter
 	jmp slloop     ; loop back up for next one
 	;pop r11
@@ -26,8 +27,6 @@ sldone:
 strcopy: ; copy string pointed to by r6 to address in r7
          ; assumes NULL termiated string
 	 ; call with bl @strcpy	
-	;pop r7
-	;pop r6
 	push r11
 	push r3
 cpyloop:

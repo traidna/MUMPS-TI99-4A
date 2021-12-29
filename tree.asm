@@ -20,8 +20,9 @@ addvar:  ;  pass varname pointer, data pointer on stack
 	push r6            ;;;; new for array
         ; update value in var                         
 	mov @14(r6),r7     ; mov address of data node to r7 
+	mov r7,@LastSet    ; store data node of last set update
 	mov r5,r6          ; move string data to r6
-	bl @strcopy        ; copy new string data to data node
+	bl @strcopy        ; copy new string data to existing data node
 	jmp advarend
 
 addvarnew:
@@ -64,17 +65,25 @@ nnclr:  movb r1,*r7+  ; clr out node
 	mov r0,*r2+   ; nulls in left link
 	mov r0,*r2+   ; nulls in right link
 	mov r8,*r2    ; save address of where data will be stored
-
+	mov r8,@LastSet ; save last set data addr
+	push r8
+	li r2,40
+addloop:
+	movb 0,*r8+
+	dec r2
+	jne addloop
+	pop r8
 	mov r8,r7     ; target destination in data area
 	mov r5,r6     ; data pointer
-	bl @strcopy
+	bl @strcopy   ; copy data to data node
 
 	mov @VIptr,r7 ; get address of next open address for index node 
 	mov r7,r6     ; store for use in insertion, returned
 	ai r7,16      ; move to next index entry
 	mov r7,@VIptr ; store in pointer
 
-	ai r8,32      ; move pointer to next position
+	;ai r8,32     ; move pointer to next position
+	ai r8,40      ; move pointer to next position
 	mov r8,@VDptr ; update code pointer 
 
 	pop r11
@@ -195,7 +204,7 @@ TreeFindVar:    ; r6 - head (current node) return value
 tfv:    
 	clr r5
 	ci r6,0h           ; if null then return
-        jeq treefvexit     ; return
+    jeq treefvexit     ; return
 	push r6            ; save r6
 	push r7            ; save r7
 	bl @strcmp         ; see if strings at r6,r7 are equal
@@ -235,3 +244,4 @@ treemin1:
 treeminend:
 	pop r11
 	b *r11
+

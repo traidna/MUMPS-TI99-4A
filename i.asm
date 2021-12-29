@@ -4,12 +4,12 @@ If:
 	push r11
 
 	clr r3           ; zero out r3
-        movb *r9+,r3     ; read char after I and advance past
-        ci r3,Space      ; is it space should be
-        jeq if2          ; if good jump down
-        li r1,12         ; missing space syntax error
-        mov r1,@ErrNum   ; set error num
-        jmp ifend       ; exit out bottom
+    movb *r9+,r3     ; read char after I and advance past
+    ci r3,Space      ; is it space should be
+    jeq if2          ; if good jump down
+    li r1,1          ; missing space syntax error
+    mov r1,@ErrNum   ; set error num
+    jmp ifend        ; exit out bottom
 
 if2:
         movb *r9,r3     ; read char after space
@@ -21,9 +21,9 @@ if2:
 	jmp ifend       ; if true continue on
 
 if3:
-        bl @getmstr      ; get mumps string
-        mov @ErrNum,r1   ; check for any errors
-        ci r1,0          ; see if any errors
+    bl @getmstr      ; get mumps string
+    mov @ErrNum,r1   ; check for any errors
+    ci r1,0          ; see if any errors
 	jne ifend        ; if errors get out      
 	popss r6         ; pull result
 	bl @strtonum     ; turn into value in R7

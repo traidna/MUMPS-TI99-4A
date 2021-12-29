@@ -19,7 +19,9 @@ Close3:
 	li r1,00100h      ; r1 00100 move only msb to pab rest of record is good
 	movb r1,@pabopc   ; store 01 in pab to request close
 
-	bl @fileio        ; request io 
+	li r14,b1fileio_a
+	bl @GoBank1
+	;bl @fileio        ; request io 
 
 	jeq closerr       ; 
 

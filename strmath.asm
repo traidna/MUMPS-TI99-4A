@@ -42,9 +42,9 @@ equalfalse:
 
 Strconcat:
 	ci r3,Underscore    ; is it an _  op
-	jne StringMathExit  ; if not move on to check for _ concatenate
+	jne StringMathExit     ; if not _ then exit
 	mov r6,r3           ; save rh value
-        mov r7,r6           ; put lh value in r6 for copy
+    mov r7,r6           ; put lh value in r6 for copy
 	pushss r7           ; get new adress on string stack to return result
 	push r7
 	bl @strcopy         ; copy r6 to r7
@@ -54,7 +54,7 @@ Strconcat:
         bl @strcat          ; 
 	jmp StringMathExit  ; 
 
-
+	
 smterm:  ; terminate a string with 0h
 	clr r7
 	movb r7,*r6

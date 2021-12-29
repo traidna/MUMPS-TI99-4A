@@ -1,9 +1,5 @@
-;vsbw:   macro p1          ; single byte write to VDP
-;        movb p1, @08C00h  ; assumes address is already positioned with
-;        endm              ; setVDPwaddr (pass address in r0 )
 
-
-	; clear 80 byers to 0's starting at BUFADR
+	; clear 80 bytes to 0's starting at BUFADR
 	; leaves VDP write address at end of buffer
 clrVDPbuf:
 	push r11
@@ -25,7 +21,7 @@ clrvdp:
 ; inputs: r0=address in vdp to read, r1(msb), the byte read from vdp
 ; side effects: none
 
-vsbr    
+vsbr:    
         swpb r0                 ; get low byte of address
         movb r0,@8C02h           ; write it to vdp address register
         swpb r0                 ; get high byte
@@ -38,15 +34,6 @@ vsbr
 
  
 
-vmbw:  
-	; r0 number of chars
-	; r1 address of string	
-vmbwloop:
-	movb *r1+,@08C00h
-	dec r0
-	jne vmbwloop
-	b *r11	
-	
 
 VDPtoRAM:  ;pass in r0 as VDP start addr
            ; pass in r2 the RAM address

@@ -9,7 +9,7 @@ Write: 	; R9 is pointer to executing code
 	movb *r9+,r3     ; read char after w and advance past
 	ci r3,2000h      ; is it space should be
 	jeq wrt2         ; if good jump down
-	li r1,12         ; missing space syntax error
+	li r1,1         ; missing space syntax error
 	mov r1,@ErrNum   ; set error num
 	jmp wrtend       ; exit out bottom			
 
@@ -37,19 +37,21 @@ wrt3:	movb *r9,r3      ; get the current char in code
 	jne  wrt4        ; if no then jump on 
 	inc r9           ; if comma then inc code pointer
 	jmp wrt2         ; loop back up for next thing to print
-wrt4	ci r3,SPACE      ; check for space between commands
+wrt4:
+	ci r3,SPACE      ; check for space between commands
 	jeq wrtend       ; if a space then done
-wrt5	ci r3,NULL       ; not a comma or space so check if NULL 
+wrt5:
+	ci r3,NULL       ; not a comma or space so check if NULL 
 	jne werror       ; if not a null then syntax error
 	jmp wrtend       ; if NULL end of line and write command
 
 werror:	
-	li r1,12        ; missing space syntax error
+	li r1,1        ; missing space syntax error
 	mov r1,@ERRNUM ; set error num
 
 wrtend:	pop r11
 	b *r11
-	;b *r7
+	
 
 wcls:   
 	mov @Dolio,r11
@@ -74,6 +76,9 @@ wnewln2:
 WriteFile:
 	push r11
 	push r1           ; push ptr of string to write
+	
+	;li r14,b1clrVDPbuf_a
+	;bl @GoBank1
  	bl @clrVDPbuf     ; clear PAB read/write buffer
 
 	li r0,BUFADR      ; write location in VDP RAM buffer setVDPaddr uses
@@ -94,7 +99,11 @@ copytobuf:                ; copy RAM to VD:P
 	swpb r0           ; move count to msb  
 	movb r0,@pabcc    ; write byte count to pab record
 	push r2           ; save location of last read
-        bl @fileio        ; request the read
+
+	li r14,b1fileio_a
+	bl @GoBank1
+        ;bl @fileio        ; request the read
+
         pop r2            ; end of string written, used by zsave - cont. to next line
 	pop r11           ; get return address of caller
 	b *r11            ; return to caller

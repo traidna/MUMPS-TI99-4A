@@ -7,9 +7,9 @@
 toupper:   ; bl @toupper call with r3 set to char to conver
            ; value returned in r3 
 
-        ci r3,96           ;compare to 96 
-        jlt toupperend    ;if r0<96 then no conversion 
-        ai r3,-32          ;R0=R0-32 (Covert lowercase to upper)
+    ci r3,96           ;compare to 96 
+    jlt toupperend    ;if r0<96 then no conversion 
+    ai r3,-32          ;R0=R0-32 (Covert lowercase to upper)
 toupperend:
 	b *r11
 
@@ -19,10 +19,10 @@ isalpha:    ; determine if character is uppercase alpha
             ; pass char in r3
             ; returns EQ if alpha NE if not
 
-        ci r3,04100h    ; capital A in word format
-        jlt isalphaend  ; not alpha
-        ci r3,05A00h    ; Z
-        jgt isalphalow  ; not alpah
+    ci r3,04100h    ; capital A in word format
+    jlt isalphaend  ; not alpha
+    ci r3,05A00h    ; Z
+    jgt isalphalow  ; not alpah
 	jmp alphagood	
 isalphalow:
 	ci r3,06100h
@@ -31,9 +31,9 @@ isalphalow:
 	jgt isalphaend 
 	
 alphagood:
-        c r3,r3        ; is alpha force true
+    c r3,r3        ; is alpha force true
 isalphaend
-        b *r11
+    b *r11
 
 
 
@@ -49,8 +49,9 @@ isdigitend:
         b *r11
 
 
-ishexdigit:    ;  determine if a character is a hex digit 0-9 A-F
-	       ;  pass in r3
+ishexdigit:    
+	;  determine if a character is a hex digit 0-9 A-F
+	;  pass in r3
 
 	push r11
 	
@@ -71,14 +72,14 @@ ishexend2:
 	b *r11
 
 
+
 toascstr: 
 	 ; convert a char (value in a byte) to a string with the ascii code/value
 	 ; pass char in lsb of r3
 	 ; pass address of string in r6
  	 ; uses r1,r2,r3,r6,r15 
-	 
-
-        clr r15        ; zero if nothing in string yet
+ 	
+    clr r15        ; zero if nothing in string yet
 	clr r2         ;
 	mov r3,r2
 	andi r2,8000h  ; 
@@ -88,7 +89,8 @@ toascstr:
 	inv r3 	
 	inc r3
 
-toas:	clr r2
+toas:
+	clr r2
 	li r1,10000    ; r1 = 1000
 	div r1,r2      ; div r2,r3 by r1 (1000) 
 	ci r2,0        ; if r3 was < 1000

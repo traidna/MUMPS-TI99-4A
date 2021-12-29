@@ -29,6 +29,10 @@ gmplus
 	jeq gmright
 	ci r3,Slash
 	jeq gmright
+	ci r3,Amp
+	jeq gmright
+	ci r3,Exclampt
+	jeq gmright
 	ci r3,Hashtag
 	jeq gmright
 	ci r3,Equals
@@ -60,37 +64,27 @@ gmrt2	push r3
 	bl @getvalue   ; get right hand value and put on ss stack
 	pop r3
 
-	;ci r3,Equals
-	;jeq gmstrmath
-	;ci r3,RightBracket
-	;jeq gmstrmath
 	
 domath	bl @math         ; numeric operators
-
 	jmp gmops
  
-	;gmstrmath:
-	;bl @StringMath   ; string operators
-	;jmp gmops	
-
-
-
 	;;; get the value of this m string
 getvalue:
 	push r11
-	clr r3        
-	movb *r9+,r3 ; get char after space and advance
-	ci r3,OpenParen
-	jne getvcp
-	bl @getmstr
+	clr r3            ; clear r3
+	movb *r9+,r3      ; get char after space and advance
+	ci r3,OpenParen   ; is it a (
+	jne getvcp        ; if no jump to getvcp
+	bl @getmstr       
 	; return here
 getvcp: ci r3,CloseParen
-	jne getv2
+	jne getv2         ; if no ( jump down
 	inc r9
 	pop r11
 	b *r11
 
-getv2	ci r3,2200h  ; check "
+getv2	
+    ci r3,2200h  ; check "
 	jeq litstr   ; go read literal string
 	ci r3,Dol    ; check for $
 	jeq dolstr   ; it's a $ function or variable 
@@ -133,7 +127,8 @@ digstr1:
 	li r5,3         ; error 
 	mov r5,@ErrNum  ; 
 	jmp exitgetmstr ; error so exit out
-digit1	bl @isdigit     ; is it a digit
+digit1	
+	bl @isdigit     ; is it a digit
 	jne termstr     ; if not then done
 digit2	inc r9
 	jmp digstr1     ; yes then loop back up to store it
@@ -153,7 +148,7 @@ termstr
 	movb r3,*r2   ; terminate the string
 	jmp exitgetmstr	
 
-
+	
 varstr:	; get value of variable
 	; 
 	
@@ -170,15 +165,15 @@ varstr:	; get value of variable
 	ci r3,Openparen  ;
 	jne varsimple
 varsarr:
-	push r6 
-	inc r9
+	push r6          ; address of the varname
+	inc r9           ; move past (
 	bl @getmstr      ; get value of what is in parens
-	popss r7
-	pop r6
-	mov @8(r6),r6
-	bl @TreeFindVar	
-	ci r6,0
-	jeq varstrerr   
+	popss r7         ; pop value inside parens
+	pop r6           ; get address of the array var back
+	mov @8(r6),r6    ; get address of array index head of subnodes tree
+	bl @TreeFindVar	 ; does it exist? (search value in r7 in subtree)
+	ci r6,0          ; if 0 does not exist
+	jeq varstrerr    ; error if does not exist
 	inc r9           ; past close paren	
 	
 	;jmp varstrexit
@@ -297,6 +292,8 @@ getlabdone:
 
 
 getlaberr:
-	li r11,4   ; bad label
+	li r11,11   ; bad label
 	mov r11,@ErrNum
 	jmp getlabterm
+
+	

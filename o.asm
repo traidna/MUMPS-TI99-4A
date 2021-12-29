@@ -10,12 +10,12 @@ Getdevnum:  ; returns devnum in r3 or sets ErrNum if not successful
 	push r11
 
 	clr r3           ; zero out r3
-        movb *r9+,r3     ; read char after O and advance past
-        ci r3,2000h      ; is it space? should be
-        jeq getdev2        ; if good jump down
-        li r1,12         ; missing space syntax error
-        mov r1,@ErrNum   ; set error num
-       ; b @openend        ; exit out bottom
+    movb *r9+,r3     ; read char after O and advance past
+    ci r3,2000h      ; is it space? should be
+    jeq getdev2      ; if good jump down
+    li r1,1          ; missing space syntax error
+    mov r1,@ErrNum   ; set error num
+    ; b @openend     ; exit out bottom
 	jmp getdevexit	
 
 getdev2:  ; get device number
@@ -34,9 +34,9 @@ getdev2:  ; get device number
 	jmp getdevexit
 
 baddevice:
-        li r1,15         ; bad device number
-        mov r1,@ErrNum   ; set error num
-        ;jmp openend      ; exit out bottom
+    li r1,9            ; bad device number
+    mov r1,@ErrNum     ; set error num
+    ;jmp openend       ; exit out bottom
 			
 getdevexit:
 	pop r11
@@ -55,12 +55,12 @@ Open3:
 	jne openend	
 
 	clr r3           ; zero out r3
-        movb *r9+,r3     ; read char after device number
-        ci r3,Colon      ; is it colon? should be
-        jeq Open4        ; if good jump down
+    movb *r9+,r3     ; read char after device number
+    ci r3,Colon      ; is it colon? should be
+    jeq Open4        ; if good jump down
 	
  opennocolon:
-	li r1,16	; missing colon
+	li r1,10	    ; missing colon
 	mov r1,@ErrNum  ;
 	jmp openend
 Open4:
@@ -71,8 +71,11 @@ Open4:
 	;movb r7,*r6+   ; clear *r6 and increment to next addr
 	;dec r1         ; decrease counter
 	;jne open4clr
+
+	li r14,b1clrampab_a
+	bl @GoBank1
+	;bl @clrampab   ; clear out ram pab ( real peb 	
 	
-	bl @clrampab   ; clear out ram pab ( real peb 	
 	bl @getmstr    ; get filename
 	popss r6       ; pop from string stack
 	li r7,pabfil   ; copy into pabfil ; clear first?? 
@@ -96,7 +99,7 @@ Open5:
 	jeq Open6
 
 badfilemode:
-	li r1,18       ; bad file mode
+	li r1,7       ; bad file mode
 	mov r1,@ErrNum ; 
 	jmp openend
 
@@ -125,7 +128,11 @@ setpabopc:
 	pop r7             ; pop string length pushed by strlen
 	swpb r7            ; move to msb
 	movb r7,@pabnln    ; with to PAB in ram
-	bl @fileio         ; request IO transactin
+
+	li r14,b1fileio_a
+	bl @GoBank1
+	;bl @fileio         ; request IO transaction
+
 	clr r3             ; ??
 	li r0,PABERR       ; get VDP address of PAB error byte
 	bl @vsbr           ; read error bye from VDP memory

@@ -1,0 +1,48 @@
+push:      macro param1      ; macro for stack push
+           mov param1,*r10+  ; type push rx  where rx is register to push
+           endm              ; r10 is stack top
+
+pop:       macro param1      ; macro for stack pop
+           ai r10,-2         ; type pop rx where rx is targt for value
+           mov *r10,param1   ; r10 is stack top
+           endm
+
+pushm:     macro param1      ; macro for mumps return stack push
+           mov param1,*r13+  ; type push rx  where rx is register to push
+           endm              ; r13 is stack top
+
+
+popm:	macro param1     ; macro for mumps return stack pop, param1 is reg
+        ai r13,-2        ; type pop rx where rx is targt for value
+        mov *r13,param1  ; r13 is stack top, param1 holds value from stack
+        endm
+
+pushss: macro param1        ; param1 is a register, will get addr for string
+ 	mov @MSP,param1     ; get current top of string stack 
+        ai param1,40        ; move upto next one
+        mov param1,@MSP     ; save it
+        ai param1,-40       ; move back down to current space to put string
+	endm                ; use this address to put string in stack
+
+
+			    ; param1 is a register	
+popss:	macro param1	    ; macro for popping MUMPS math/string stack
+	mov @MSP,param1     ; get current mumps string stack ptr
+        ai param1,-40       ; bump down one 32 byte string
+        mov param1,@MSP     ; store pos as next to enter
+	endm                ; param1 now holds address to string 
+	
+vsbw:   macro             ; single byte write to VDP
+        movb r1,@08C00h   ; assumes address is already positioned with
+        endm              ; setVDPwaddr (pass address in r0 )
+	; turns on inverse printing
+
+invon   macro
+	li r14,INV
+	mov r14,@PrtMode
+	endm
+	
+	; turn off inv printing
+invoff  macro
+	clr @PrtMode
+	endm

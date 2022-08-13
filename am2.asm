@@ -74,8 +74,8 @@ errprtline:
 	bl @CR
 	bl @CR
 	; speech Error
-    li r0,28EFh	        ; Error
-	li r14,b1Speech2_a
+    ;;;;li r0,28EFh	        ; Error
+	;;;li r14,b1Speech2_a
 	bl @GoBank1
 	
 	mov @ErrNum, r1

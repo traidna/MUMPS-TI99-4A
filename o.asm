@@ -1,8 +1,8 @@
 	; Open command
 	; O devicenumber:filename:Mode - 0 reserved for console
 	; 1 - 9 available otherwise
-	; O:"DSK1.FILE":W
-	; FILE NAME NEEDS TO HAVE DKSX.FILENAME
+	; O 1:"DSK1.FILE":"W"
+	; FILE NAME NEEDS TO HAVE DSKX.FILENAME X is drive number
 	; MODE = R-READ, W-WRITE 
 	
 Getdevnum:  ; returns devnum in r3 or sets ErrNum if not successful

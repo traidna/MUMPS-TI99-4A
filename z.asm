@@ -52,20 +52,22 @@ zr:	li r2,'R'      ; delete mumps source
 
 ZD:	li r2,'D'      ; is it D - list
 	swpb r2        ; mov to msg
-	cb r3,r2       ; is is ZL command
-	jne ZE         ; if not jump donw to zee2 - error
+	cb r3,r2       ; is is ZD command list routine
+	;;;jne ZE         ; if not jump donw to zee2 - error
+	jne ZM
 	li r14,b1zlist_a ;
 	bl @GoBank1    ; 
 	;bl @zlist      ; list source
 	jmp zexit
 
-ZE:	li r2,'E'      ; is it E - editor
-	swpb r2        ; mov to msg
-	cb r3,r2       ; is is ZL command
-	jne ZM         ; if not jump donw to zee2 - error
-	li r14,b1ze_a  ; call ze in Bank1
-	bl @GoBank1    ; go bank1
-	jmp zexit      ; returned form bank1
+	;;; inactive see ZD above to change JNE ZM to JNE ZE to put back in 
+;;ZE:	li r2,'E'      ; is it E - editor
+	;;;swpb r2        ; mov to msg
+	;;;cb r3,r2       ; is is ZL command
+	;;;jne ZM         ; if not jump donw to zee2 - error
+	;;;li r14,b1ze_a  ; call ze in Bank1
+	;;;bl @GoBank1    ; go bank1
+	;;;jmp zexit      ; returned form bank1
 
 
 
@@ -87,17 +89,19 @@ zmcall:	li r14,b1zm2_a
 	jmp zexit	
 
 zmerr:
-        li r1,12         ; missing space
-        mov r1,@ErrNum  ; log error
-        jmp zexit
+    li r1,12         ; missing space
+    mov r1,@ErrNum  ; log error
+    jmp zexit
 
 
 
-Zee2:	li r1,5          ; error unknown command
+Zee2:	
+	li r1,5          ; error unknown command
 	mov r1,@ErrNum   ; store it 
 	jmp zexit        ; done
 
-zexit:  pop r11
+zexit:  
+	pop r11
 	b *r11
 
 

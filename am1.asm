@@ -120,8 +120,8 @@ mumpsinit:
 	bl @defcursor     ; create cursor definition
 	bl @copychardef   ; copy TI Basic character defs to VDP mem	
 		
-	li r0,351Ah         ; hello address for speech
-	bl @Speech          ; say the word at address in R0
+	;;;li r0,351Ah         ; hello address for speech
+	;;;bl @Speech          ; say the word at address in R0
 		
 	clr @HaltFlag       ; set haltflag to 0 - keep parsing
     clr @ErrNum         ; set ErrNum to 0   - no errors
@@ -227,7 +227,7 @@ initend:
 	b *r11
 
 SplashStr32:
-	byte "*  Andiar System Mumps v 0.8   *",0
+	byte "*  Andiar System Mumps v 0.A   *",0
 	align 2
 StarStr32:
     byte "********************************",0
@@ -235,7 +235,7 @@ StarStr32:
 
 	
 SplashStr:
-    byte "*      ANDIAR SYSTEMS MUMPS V 0.8      *",0
+    byte "*      ANDIAR SYSTEMS MUMPS V 0.A      *",0
     align 2
 StarStr:
     byte "****************************************",0

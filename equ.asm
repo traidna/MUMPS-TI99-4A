@@ -6,8 +6,14 @@ ErrNum     equ 08324h   ; Error number set when an error
 CodeTop    equ 08326h   ; next available address for code (bytes)
 MSP        equ 08328h   ; mumps math stack pointer (strings 32 bytes ea)
 LastKeyin  equ 0832Ah   ; used for getkey - dup keys
-VIptr      equ 0832Ch   ; pointer to next available local var index node
-VDptr      equ 0832Eh   ; pointer to next available local var data node
+
+;VIptr      equ 0832Ch   ; pointer to next available local var index node
+;VDptr      equ 0832Eh   ; pointer to next available local var data node
+
+VIptr      equ 2FFAh   ; pointer to next available local var index node
+VDptr      equ 2FFCh   ; pointer to next available local var data node
+
+
 STRSP      equ 08330h   ; pointer to top of string stack
 QuitFlag   equ 08332h   ; True when Quit and return stack empty
 Head       equ 08334h   ; head of the symbol table b-tree
@@ -16,8 +22,9 @@ Dolio      equ 08338h   ; word house $io in lsb, msb =00, console is 0000h
 tmpio      equ 0833Ah   ; temp io for open, use, close
 openio     equ 0833Ch   ; open file dev number
 fioerr     equ 0833Eh   ; value from paberr in vdp ram set in fileio
-ScreenWidth equ 8340h   ; wdith of screen 
-LastSet    equ 08342h   ; address of data node from last set (used in for loops)
+ScreenWidth equ 8340h   ; width of screen 
+;LastSet    equ 08342h   ; address of data node from last set (used in for loops)
+LastSet    equ 2FFEh     ; address of a data node from last set
 Forflg     equ 08344h   ; Byte forloop flag 0 not in for number depth of fors
 PrtMode    equ 08346h   ; Inverse (9600h) or Regular (0) print
 MemMapper  equ 08348h   ; for mem mapper indicator 0-off 1-on

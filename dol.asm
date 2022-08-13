@@ -1,6 +1,6 @@
    ;; dol.asm - instrinsic functions and $ sys vars
 
-getparams:   ; $*(p1,p2,p3,p4) - flags r0->p1, r12->92, r15->9
+getparams:   ; $*(p1,p2,p3,p4) - flags r0->p1, r12->p2, r15->p3
 	push r11
 	clr r0
 	clr r12
@@ -101,11 +101,11 @@ dolc:   ;; $c(num) return the character whose value is in the string passed
 	popss r0
 	mov r0,r6        ; copy pointer to string to r6 
 	bl @strtonum     ; uses r6 to convert string to num in r8
-	swpb r8          ; swap byte and move to string
+	swpb r7          ; swap byte and move to string
 	pushss r6
-	mov r8,*r6+      ; move to string
+	mov r7,*r6+      ; move to string
 	clr r1           ; put NULL in r1
-	mov r8,*r6       ; terminate string	
+	mov r7,*r6       ; terminate string	
 
 	pop r11
 	b *r11
@@ -217,8 +217,7 @@ dolperr:
 
 
 
-doll:   ; $l() - returns ascii value a character
-        ; $l(string) returns length of first character
+doll:   ; $l(string) returns length of a string
         ; value is returned on the MUMPS string stack
 
         push r11
@@ -311,7 +310,8 @@ dolx:   ;; $x(num) moves screen position to num
 	b *r11           ; branch back to caller
 
 dolv:   ; non standard dol function - $v(addr) peek addr
-        ; return value at address passed
+        ; return byte value at address passed
+		; 
 	
 	push r11
 	
@@ -327,6 +327,43 @@ dolv:   ; non standard dol function - $v(addr) peek addr
 	
 	pop r11
 	b *r11
+
+
+dolw:   ; non standard dol function - $s(addr) vdp memory peek addr
+        ; return byte value at address passed
+		; 
+	
+	push r11
+	
+	bl @getparams    ; get params r0 string
+	popss r0         ; get value of param one off string stack
+	mov r0,r6        ; copy pointer to string to r6 
+	bl @strtonum     ; uses r6 to convert string to num in r7
+	clr r3
+	
+	; movb *r7,r3      ; get value at address passed replace with VDP single byte read
+	;[ vdp single byte read
+	; inputs: r0=address in vdp to read, r1(msb), the byte read from vdp
+	; side effects: none
+	; vsbr:    
+    ; R7 has address (replace r0 with R7 from VSBR and return addr into R3 instead of R1
+	swpb r7                 ; get low byte of address
+    movb r7,@8C02h           ; write it to vdp address register
+    swpb r7                 ; get high byte
+	andi r7,03FFFh
+    movb r7,@8C02h          ; write
+    movb @8800h,r3           ; read payload
+    
+    ;;;;;;;
+	
+	swpb r3
+	pushss r6        ; get string space to return the value
+	bl @toascstr     ; conver value to a string
+	
+	pop r11
+	b *r11
+
+
 
 dolk:   ; poke $k(addr, value) pokes value into CPU addressable address
 
@@ -374,18 +411,18 @@ dolq:   ; poke $Q(addr, value) pokes value into VDP addressable address
 	popss r0         ; get value of param one addressoff string stack
 	mov r0,r6        ; copy pointer to string to r6 
 	bl @strtonum     ; uses r6 to convert string to num in r7
-	;pop r8
-	;swpb r8
-	mov r7,r0
-	bl @setVDPwaddr  
+	
+	mov r7,r0        ; move VDP write address to R0 for setVDPwadddr
+	bl @setVDPwaddr  ; set up write to address
 	;mov r8,r1
-	pop r1
-	swpb r1
-	vsbw
-	pushss r6
-	mov r8,r3
-	swpb r3
-	bl @toascstr
+	pop r1           ; pop param that is the byte to write
+	swpb r1          ; put byte in msb position
+	vsbw             ; write the value to VDP memory
+	pushss r6        ; get a string stack address 
+	;mov r8,r3        ;        
+	mov R1,R3
+	swpb r3          ; move the value written to R3 to be retrun value
+	bl @toascstr     ; convert value in msb of R3 to string at R6
 dolqend:
 	pop r11
 	b *r11
@@ -599,9 +636,10 @@ dolhend:
 	bl *r11
 
 doln:    ; screen parameters
-		 ; single parameter set (32 or 40 columns)
-		 ; Seconpar (>XY) X Fg COLOR y bG COLOR
+		 ; first parameter set (32 or 40 columns)
+		 ; Seconpar (>$XY) X Fg COLOR y bG COLOR
 		 ; Third par - border color
+		 ;  S BL=$N(40,23,1) 
 		 
 	push r11
 	
@@ -659,4 +697,73 @@ dolnerr:
 dolnend:
 	pop r11
 	b *r11
+	
+	
+dolj:   ; joystick ( pass in stick one or two ??)
+	
+	push r11
+
+	bl @getparams    ; get params r0 string
+	popss r0
+	mov r0,r6        ; copy pointer to string to r6 
+	bl @strtonum     ; uses r6 to convert string to num in r8
+	
+	li r6,0
+
+	li r2,2500h			;Pause
+Delay:		
+	dec r2
+	jne Delay
+	
+	
+chkjoy:		
+	mov r10,r8
+	li r10,0100h		;Byte=1
+	LI R12,0024h     	;Point CR reg (R12) to Keyboard Matrix 0024h
+	LI R1,0600h       	;Line 6 - Joy 1  modify this for joy 2 later
+	LDCR R1,3           ;Select 
+	LI R12,0006h      	;CRU address of the keyboard rows 
+	mov r8,r10
+	
+Fire:
+	tb 0
+	jeq NoFire
+	li r3,15
+	jmp chkjoyexit
+	
+NoFire:	
+	tb 1				;Test Bit 1 (Left)
+	jeq NoLeft
+	li r3,1
+	jmp chkjoyexit      
+	
+NoLeft:
+	tb 2				;Test Bit 2 (Right)
+	jeq NoRight
+	li r3,2
+	jmp chkjoyexit      
+NoRight:
+	tb 3				;Test Bit 3 (Down)
+	jeq NoDown
+	li r3,3
+	jmp chkjoyexit      
+NoDown:
+	tb 4				;Test Bit 4 (Up)
+	jeq NoUp
+	li r3,4
+	jmp chkjoyexit      
+
+NoUp:
 		
+chkjoyexit:  
+	pushss r6
+	bl @toascstr
+
+	pop r11
+	b *r11
+
+
+
+
+
+

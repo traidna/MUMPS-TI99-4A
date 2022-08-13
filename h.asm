@@ -9,9 +9,9 @@ Halt: 	;
 	li r1,PressMsg      ; get Press key to continue
 	bl @PrintString     ; print press key message
 
-	li r0,3148h	        ; goodbye
-	li r14,b1Speech_a
-	bl @GoBank1
+	;;li r0,3148h	        ; goodbye
+	;;li r14,b1Speech_a
+	;;bl @GoBank1
 
 	
 	li r14,b1getkey_a   ; set address in bank2 for getkey

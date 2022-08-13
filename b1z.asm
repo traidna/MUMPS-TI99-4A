@@ -172,18 +172,20 @@ zsclose ; close file
     
 zlist:    ; list code
     push r11
-	push r3
+
 	mov @Screenwidth,r3
 	ci r3,40
 	jeq zlcont
 	li r1,1700h
 	bl @Text40
 	bl @Cls
-	pop r3
-zlcont:	
+
+zlcont:
+	
     movb *r9,r3        ; get current char
-    ci r3,0000h        ; check if no label
-    jne zlista         ; not zero so there is a label
+    ci r3,0000h        ; check if no label 
+    ;jne zlista         ; not zero so there is a label
+	jeq zlista         ;;;
     li r1,CODESTART    ; start a beginning of Codearea
     jmp zlist2         ; start listing
 zlista:  

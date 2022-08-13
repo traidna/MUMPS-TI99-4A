@@ -23,7 +23,7 @@ ProgramA:
 	WORD 0                  ;1st entry 0=only one program
 	WORD ProgramStart       ;Start of Program
 	BYTE 11                 ;Text Length
-	BYTE "MUMPS V 0.8"      ;Text Message
+	BYTE "MUMPS V 0.A"      ;Text Message
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;CODE 
@@ -40,8 +40,8 @@ ProgramStart:
 	;;  address in equ.asm will need to be changed
 
 b0treeprint:     ; b1kscan -> getkey
-        bl @treeprint
-        b @RetBank1
+    bl @treeprint
+    b @RetBank1
 
 b0getmstr:
 	bl @getmstr
@@ -95,7 +95,7 @@ PS2:
 
 	clr @CursorPos
 
-	;li r0,40
+	;;;li r0,40
 	li r0,32
 	mov r0,@ScreenWidth
 
@@ -112,26 +112,14 @@ PS2:
 
 startmumps:
 
-	
-
-
-
    ; area for test code
-   ; Put read routine on 16-bit bus.
 
-	;LI R1,SpchReadit
-	;LI R2,CODE
-	;LI R3,CLEN
-;ST2 mov *R2+,*R1+
-	;DECT R3
-	;JNE ST2 
-
-
+	;
+	
 init:	
 	li r14,b1minit_a
 	bl @GoBank1
 		
-
 mgs	
 	li r2,800         ; set screen pos col 0 row 20 (ScreenWidth*20+0)
 	mov @ScreenWidth,r0
@@ -166,7 +154,7 @@ mgs3:
 	bl @strcopy       ; copy it over
 	inc r7            ; strcopy leaves r7 at Null terminator 
 	li r2,EOF         ; end of file marker on command string
-        movb r2,*r7       ; put in CmdLine
+    movb r2,*r7       ; put in CmdLine
 
 	li r9,CmdLine     ; pointer to string of mumps code
 
@@ -338,8 +326,8 @@ jmptbl:  ; MUMPS command jump table
     word Quit,Read,Set,0,Use,0,Write,0,0,Zee
 
 doltbl:
-	word dola,dolb,dolc,0,dole,0,0,dolh,doli,0,dolk,doll,dolm
-    word doln,dolo,dolp,dolq,0,dols,doltt,dolu,dolv,0,dolx,0,0
+	word dola,dolb,dolc,0,dole,0,0,dolh,doli,dolj,dolk,doll,dolm
+    word doln,dolo,dolp,dolq,0,dols,doltt,dolu,dolv,dolw,dolx,0,0
 
 	org 07fffh
 	byte 0
